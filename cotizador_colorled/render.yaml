@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cotizador-colorled
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: ODOO_URL
+        value: https://gfgroup.odoo.com
+      - key: ODOO_DB
+        value: gfgroup
+      - key: ODOO_USER
+        value: colorlednaguanagua@gmail.com
+      - key: ODOO_PASS
+        value: GFgroup
