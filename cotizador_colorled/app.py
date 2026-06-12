@@ -31,27 +31,49 @@ def index():
 
 @app.route("/api/producto")
 def buscar_producto():
-    """Busca producto por referencia interna (código)."""
+    """Busca producto por referencia interna y devuelve el precio de la tarifa USD BASE."""
     codigo = request.args.get("codigo", "").strip().upper()
     if not codigo:
         return jsonify({"error": "Código requerido"}), 400
     try:
         uid, models = get_odoo()
+
+        # Buscar producto
         resultados = call(
             models, uid,
             "product.product", "search_read",
             [[["default_code", "=", codigo]]],
             {"fields": ["id", "name", "default_code", "list_price"], "limit": 1}
         )
-        if resultados:
-            p = resultados[0]
-            return jsonify({
-                "id":     p["id"],
-                "codigo": p["default_code"],
-                "nombre": p["name"],
-                "precio": p["list_price"]
-            })
-        return jsonify({"error": "Código no encontrado"}), 404
+        if not resultados:
+            return jsonify({"error": "Código no encontrado"}), 404
+
+        p = resultados[0]
+
+        # Obtener precio de la tarifa USD BASE
+        pricelists = call(
+            models, uid, "product.pricelist", "search_read",
+            [[["name", "ilike", "USD BASE"]]],
+            {"fields": ["id"], "limit": 1}
+        )
+        precio = p["list_price"]
+        if pricelists:
+            pricelist_id = pricelists[0]["id"]
+            try:
+                precio = models.execute_kw(
+                    ODOO_DB, uid, ODOO_PASS,
+                    "product.pricelist", "get_product_price",
+                    [pricelist_id, p["id"], 1.0, False]
+                )
+            except Exception:
+                precio = p["list_price"]
+
+        return jsonify({
+            "id":     p["id"],
+            "codigo": p["default_code"],
+            "nombre": p["name"],
+            "precio": precio
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
