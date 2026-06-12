@@ -127,7 +127,7 @@ def enviar_pedido():
         # 2. Buscar tarifa USD BCV
         pricelists = call(
             models, uid, "product.pricelist", "search_read",
-            [[["name", "ilike", "BCV"]]],
+            [[["name", "ilike", "USD BASE"]]],
             {"fields": ["id"], "limit": 1}
         )
         pricelist_id = pricelists[0]["id"] if pricelists else False
