@@ -38,35 +38,48 @@ def buscar_producto():
     try:
         uid, models = get_odoo()
 
-        # Buscar producto
+        # 1. Buscar producto (con id de plantilla)
         resultados = call(
             models, uid,
             "product.product", "search_read",
             [[["default_code", "=", codigo]]],
-            {"fields": ["id", "name", "default_code", "list_price"], "limit": 1}
+            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id"], "limit": 1}
         )
         if not resultados:
             return jsonify({"error": "Código no encontrado"}), 404
 
         p = resultados[0]
+        tmpl_id = p["product_tmpl_id"][0] if isinstance(p.get("product_tmpl_id"), list) else p.get("product_tmpl_id")
+        precio = p["list_price"]
 
-        # Obtener precio de la tarifa USD BASE
+        # 2. Obtener tarifa USD BASE
         pricelists = call(
             models, uid, "product.pricelist", "search_read",
             [[["name", "ilike", "USD BASE"]]],
             {"fields": ["id"], "limit": 1}
         )
-        precio = p["list_price"]
+
         if pricelists:
-            pricelist_id = pricelists[0]["id"]
-            try:
-                precio = models.execute_kw(
-                    ODOO_DB, uid, ODOO_PASS,
-                    "product.pricelist", "get_product_price",
-                    [pricelist_id, p["id"], 1.0, False]
-                )
-            except Exception:
-                precio = p["list_price"]
+            pl_id = pricelists[0]["id"]
+            campos = {"fields": ["compute_price", "fixed_price", "percent_price", "price_discount", "price_surcharge"], "limit": 1}
+
+            # Buscar regla más específica: variante → plantilla → global
+            for domain in [
+                [["pricelist_id","=",pl_id], ["applied_on","=","0_product_variant"], ["product_id","=",p["id"]]],
+                [["pricelist_id","=",pl_id], ["applied_on","=","1_product"],         ["product_tmpl_id","=",tmpl_id]],
+                [["pricelist_id","=",pl_id], ["applied_on","=","3_global"]],
+            ]:
+                items = call(models, uid, "product.pricelist.item", "search_read", [domain], campos)
+                if items:
+                    item = items[0]
+                    if item["compute_price"] == "fixed":
+                        precio = item["fixed_price"]
+                    elif item["compute_price"] == "percentage":
+                        precio = p["list_price"] * (1 - item["percent_price"] / 100)
+                    elif item["compute_price"] == "formula":
+                        base = p["list_price"]
+                        precio = (base - item.get("price_discount", 0)) * (1 - item.get("price_surcharge", 0) / 100)
+                    break
 
         return jsonify({
             "id":     p["id"],
