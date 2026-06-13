@@ -246,6 +246,83 @@ def enviar_pedido():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/ficha/<codigo>")
+def ficha_tecnica(codigo):
+    """Devuelve ficha técnica completa de un producto: descripción, atributos, imagen grande y precio USD BASE."""
+    try:
+        uid, models = get_odoo()
+
+        # 1. Buscar producto
+        resultados = call(models, uid, "product.product", "search_read",
+            [[["default_code", "=", codigo.upper()]]],
+            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id",
+                        "description_sale", "categ_id", "image_512"], "limit": 1})
+        if not resultados:
+            return jsonify({"error": "Producto no encontrado"}), 404
+
+        p       = resultados[0]
+        tmpl_id = p["product_tmpl_id"][0] if isinstance(p.get("product_tmpl_id"), list) else p.get("product_tmpl_id")
+
+        # 2. Precio USD BASE (misma lógica que /api/producto)
+        precio_base = p["list_price"]
+        pricelists  = call(models, uid, "product.pricelist", "search_read",
+            [[["name", "ilike", "USD BASE"]]], {"fields": ["id"], "limit": 1})
+        if pricelists:
+            pl_id  = pricelists[0]["id"]
+            campos = {"fields": ["compute_price", "fixed_price", "percent_price",
+                                 "price_discount", "price_surcharge"], "limit": 1}
+            for domain in [
+                [["pricelist_id","=",pl_id],["applied_on","=","0_product_variant"],["product_id","=",p["id"]]],
+                [["pricelist_id","=",pl_id],["applied_on","=","1_product"],["product_tmpl_id","=",tmpl_id]],
+                [["pricelist_id","=",pl_id],["applied_on","=","3_global"]],
+            ]:
+                items = call(models, uid, "product.pricelist.item", "search_read", [domain], campos)
+                if items:
+                    item = items[0]
+                    if item["compute_price"] == "fixed":
+                        precio_base = item["fixed_price"]
+                    elif item["compute_price"] == "percentage":
+                        precio_base = p["list_price"] * (1 - item["percent_price"] / 100)
+                    elif item["compute_price"] == "formula":
+                        precio_base = (p["list_price"] - item.get("price_discount", 0)) * (1 - item.get("price_surcharge", 0) / 100)
+                    break
+
+        # 3. Atributos / especificaciones técnicas
+        attr_lines = call(models, uid, "product.template.attribute.line", "search_read",
+            [[["product_tmpl_id", "=", tmpl_id]]],
+            {"fields": ["attribute_id", "value_ids"]})
+
+        specs = []
+        for line in attr_lines:
+            attr_name = line["attribute_id"][1] if isinstance(line["attribute_id"], list) else str(line["attribute_id"])
+            if line["value_ids"]:
+                values    = call(models, uid, "product.attribute.value", "read",
+                    [line["value_ids"]], {"fields": ["name"]})
+                attr_val  = ", ".join(v["name"] for v in values)
+                specs.append({"atributo": attr_name, "valor": attr_val})
+
+        # 4. Categoría e imagen
+        categ        = p.get("categ_id")
+        categ_nombre = categ[1] if isinstance(categ, list) else ""
+        if "/" in categ_nombre:
+            categ_nombre = categ_nombre.split("/")[-1].strip()
+
+        imagen  = p.get("image_512")
+        img_src = f"data:image/png;base64,{imagen}" if imagen else None
+
+        return jsonify({
+            "codigo":      p["default_code"],
+            "nombre":      p["name"],
+            "categoria":   categ_nombre,
+            "descripcion": p.get("description_sale") or "",
+            "imagen":      img_src,
+            "precio_base": precio_base,
+            "specs":       specs,
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/catalogo")
 def catalogo():
     """Devuelve todos los productos activos con precios USD BASE y descuentos."""
