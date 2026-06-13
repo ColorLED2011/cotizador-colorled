@@ -192,34 +192,47 @@ def enviar_pedido():
                 "price_unit":      linea["precio"],
             }))
 
-        # 4. Calcular descuentos e incluirlos como nota informativa
-        lineas_nota = []
-        total_final = subtotal
+        # 4. Calcular descuentos e incluirlos como tabla HTML en la nota
+        total_final  = subtotal
+        filas_desc   = ""
 
         if desc_divisas:
-            monto_div   = subtotal * 0.75
+            monto_div    = subtotal * 0.75
             total_final -= monto_div
-            lineas_nota.append(
-                f"  • Descuento 75% pago divisas:          - USD {monto_div:,.2f}"
+            filas_desc  += (
+                f'<tr style="color:#2e7d32;">'
+                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;">Descuento 75% — Pago en divisas</td>'
+                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">− USD {monto_div:,.2f}</td>'
+                f'</tr>'
             )
         if desc_pronto:
-            monto_pp    = total_final * 0.10
+            monto_pp     = total_final * 0.10
             total_final -= monto_pp
-            lineas_nota.append(
-                f"  • Descuento 10% pronto pago 10 días:   - USD {monto_pp:,.2f}"
+            filas_desc  += (
+                f'<tr style="color:#2e7d32;">'
+                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;">Descuento 10% — Pronto pago 10 días</td>'
+                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">− USD {monto_pp:,.2f}</td>'
+                f'</tr>'
             )
 
         nota_completa = notas
-        if lineas_nota:
-            bloque = (
-                "──────────────────────────────────────────\n"
-                "DESCUENTOS ESPECIALES APLICABLES:\n"
-                f"  • Subtotal lista:                        USD {subtotal:,.2f}\n"
-                + "\n".join(lineas_nota) + "\n"
-                f"  ► TOTAL CON DESCUENTOS:                  USD {total_final:,.2f}\n"
-                "──────────────────────────────────────────"
+        if filas_desc:
+            tabla_html = (
+                f'<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Arial;">'
+                f'<tr style="background:#1a1a2e;color:#ffffff;">'
+                f'<td colspan="2" style="padding:8px 12px;font-weight:bold;font-size:12px;letter-spacing:0.04em;">'
+                f'🏷 Descuentos especiales aplicables</td></tr>'
+                f'<tr><td style="padding:7px 12px;border-bottom:1px solid #eee;color:#444;">Subtotal a precio lista (USD BASE)</td>'
+                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#444;">USD {subtotal:,.2f}</td></tr>'
+                f'{filas_desc}'
+                f'<tr style="background:#f1f8e9;">'
+                f'<td style="padding:9px 12px;font-weight:bold;color:#1b5e20;font-size:14px;">✔ Total a pagar con descuentos</td>'
+                f'<td style="padding:9px 12px;font-weight:bold;color:#1b5e20;font-size:14px;text-align:right;white-space:nowrap;">USD {total_final:,.2f}</td>'
+                f'</tr></table>'
             )
-            nota_completa = bloque + ("\n\n" + notas if notas else "")
+            if notas:
+                tabla_html += f'<p style="margin-top:10px;font-size:13px;">{notas}</p>'
+            nota_completa = tabla_html
 
         # 6. Crear pedido
         order_vals = {
