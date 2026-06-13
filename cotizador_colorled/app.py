@@ -278,10 +278,11 @@ def catalogo():
                 elif item["applied_on"] == "3_global":
                     pl_global = item
 
-        # 3. Obtener todos los productos activos con código
+        # 3. Obtener productos activos con código y existencia > 0
         productos = call(models, uid, "product.product", "search_read",
-            [[["active", "=", True], ["default_code", "!=", False], ["sale_ok", "=", True]]],
-            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id", "image_128"],
+            [[["active", "=", True], ["default_code", "!=", False],
+              ["sale_ok", "=", True], ["qty_available", ">", 0]]],
+            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id", "image_128", "qty_available"],
              "order": "default_code asc"})
 
         # 4. Calcular precio USD BASE por producto (cascada variante → plantilla → global)
