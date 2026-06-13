@@ -179,12 +179,11 @@
         <table class="cat-table" id="cat-tabla" style="display:none">
           <thead>
             <tr>
-              <th style="width:36%">Producto</th>
-              <th class="r" style="width:13%">USD BASE</th>
-              <th class="r" style="width:13%">Con 75%<br><small style="font-weight:400;text-transform:none">Pago divisas</small></th>
-              <th class="r" style="width:13%">Con 10%<br><small style="font-weight:400;text-transform:none">Pronto pago</small></th>
-              <th class="r" style="width:14%">75%+10%<br><small style="font-weight:400;text-transform:none">Ambos desc.</small></th>
-              <th style="width:11%"></th>
+              <th style="width:40%">Producto</th>
+              <th class="r" style="width:16%">USD BASE</th>
+              <th class="r" style="width:16%">Con 75%<br><small style="font-weight:400;text-transform:none">Pago divisas</small></th>
+              <th class="r" style="width:16%">75%+10%<br><small style="font-weight:400;text-transform:none">Ambos desc.</small></th>
+              <th style="width:12%"></th>
             </tr>
           </thead>
           <tbody id="cat-body"></tbody>
@@ -586,7 +585,6 @@ function renderCatalogo(lista) {
   lista.forEach(p => {
     const b    = p.precio_base;
     const d75  = b * 0.25;
-    const d10  = b * 0.90;
     const both = b * 0.25 * 0.90;
     const thumb = p.imagen
       ? `<div class="cat-thumb"><img src="${p.imagen}" alt="" /></div>`
@@ -607,7 +605,6 @@ function renderCatalogo(lista) {
       </td>
       <td class="price-base">${fmt(b)}</td>
       <td class="price-d75">${fmt(d75)}</td>
-      <td class="price-d10">${fmt(d10)}</td>
       <td class="price-both">${fmt(both)}</td>
       <td style="text-align:center">
         <button class="btn-usar"
