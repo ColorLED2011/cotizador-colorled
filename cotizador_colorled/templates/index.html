@@ -78,6 +78,58 @@
   .disc-option .dp { margin-left: auto; font-size: 13px; font-weight: 700; color: #2e7d32; }
   .disc-option.active { background: #e8f5e9; border-color: #a5d6a7; }
 
+  /* Botón catálogo */
+  .btn-catalogo { display: inline-flex; align-items: center; gap: 6px;
+                  padding: 7px 14px; background: #fff; border: 1.5px solid #1565c0;
+                  color: #1565c0; border-radius: 8px; font-size: 13px; font-weight: 600;
+                  cursor: pointer; margin-right: 10px; }
+  .btn-catalogo:hover { background: #e8f4fd; }
+
+  /* Modal catálogo */
+  #modal-catalogo { display: none; position: fixed; inset: 0; z-index: 1000;
+                    background: rgba(0,0,0,0.55); }
+  #modal-catalogo.visible { display: flex; align-items: stretch; justify-content: center; }
+  .modal-panel { background: #fff; width: 100%; max-width: 1100px; margin: 0 auto;
+                 display: flex; flex-direction: column; overflow: hidden; }
+  .modal-head { display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+                border-bottom: 1px solid #e0e0e0; flex-shrink: 0; background: #f8fafc; }
+  .modal-head h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0; flex: 1; }
+  .modal-search { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px;
+                  font-size: 13px; width: 260px; outline: none; }
+  .modal-search:focus { border-color: #1565c0; }
+  .btn-close-modal { background: none; border: none; font-size: 22px; cursor: pointer;
+                     color: #888; line-height: 1; padding: 0 4px; }
+  .btn-close-modal:hover { color: #c62828; }
+
+  /* Tabla catálogo */
+  .modal-body { overflow-y: auto; flex: 1; }
+  .cat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cat-table thead { position: sticky; top: 0; background: #f8fafc; z-index: 1; }
+  .cat-table th { padding: 9px 10px; font-size: 11px; font-weight: 700;
+                  text-transform: uppercase; letter-spacing: 0.05em; color: #777;
+                  border-bottom: 2px solid #e0e0e0; white-space: nowrap; }
+  .cat-table th.r { text-align: right; }
+  .cat-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  .cat-table tr:hover td { background: #fafcff; }
+  .cat-prod-wrap { display: flex; align-items: center; gap: 10px; }
+  .cat-thumb { width: 42px; height: 42px; border-radius: 6px; flex-shrink: 0;
+               border: 1px solid #e0e0e0; background: #f5f5f5; overflow: hidden;
+               display: flex; align-items: center; justify-content: center;
+               color: #ccc; font-size: 20px; }
+  .cat-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .cat-nombre { font-size: 12px; font-weight: 500; color: #2c2c2c; }
+  .cat-code   { font-size: 11px; font-family: monospace; color: #888; margin-top: 2px; }
+  .price-base { font-weight: 600; color: #1a1a2e; text-align: right; white-space: nowrap; }
+  .price-d75  { font-weight: 600; color: #2e7d32; text-align: right; white-space: nowrap; }
+  .price-d10  { font-weight: 600; color: #1565c0; text-align: right; white-space: nowrap; }
+  .price-both { font-weight: 600; color: #e65100; text-align: right; white-space: nowrap; }
+  .btn-usar   { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32;
+                font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px;
+                cursor: pointer; white-space: nowrap; }
+  .btn-usar:hover { background: #c8e6c9; }
+  #cat-loading { padding: 40px; text-align: center; color: #888; font-size: 14px; }
+  #cat-empty   { display: none; padding: 30px; text-align: center; color: #aaa; font-size: 13px; }
+
   /* Botón enviar */
   .btn-enviar { width: 100%; padding: 13px; background: #1565c0; color: #fff;
                 border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
@@ -105,14 +157,51 @@
 
   <div class="header">
     <h1>📋 Nuevo presupuesto — COLOR LED</h1>
-    <span class="badge">💵 Tarifa USD BASE</span>
+    <div style="display:flex; align-items:center; gap:0">
+      <button class="btn-catalogo" onclick="abrirCatalogo()">📚 Catálogo</button>
+      <span class="badge">💵 Tarifa USD BASE</span>
+    </div>
+  </div>
+
+  <!-- ── Modal catálogo ─────────────────────────────────── -->
+  <div id="modal-catalogo" role="dialog" aria-modal="true" aria-label="Catálogo de productos"
+       onclick="if(event.target===this)cerrarCatalogo()">
+    <div class="modal-panel">
+      <div class="modal-head">
+        <h2>📚 Catálogo de productos</h2>
+        <input class="modal-search" type="text" id="cat-search"
+               placeholder="Buscar por código o descripción…" oninput="filtrarCatalogo(this.value)" />
+        <button class="btn-close-modal" onclick="cerrarCatalogo()" title="Cerrar">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="cat-loading">⏳ Cargando productos desde Odoo…</div>
+        <div id="cat-empty">No se encontraron productos.</div>
+        <table class="cat-table" id="cat-tabla" style="display:none">
+          <thead>
+            <tr>
+              <th style="width:36%">Producto</th>
+              <th class="r" style="width:13%">USD BASE</th>
+              <th class="r" style="width:13%">Con 75%<br><small style="font-weight:400;text-transform:none">Pago divisas</small></th>
+              <th class="r" style="width:13%">Con 10%<br><small style="font-weight:400;text-transform:none">Pronto pago</small></th>
+              <th class="r" style="width:14%">75%+10%<br><small style="font-weight:400;text-transform:none">Ambos desc.</small></th>
+              <th style="width:11%"></th>
+            </tr>
+          </thead>
+          <tbody id="cat-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- Banners -->
   <div id="banner-ok" class="banner ok">
     <strong>✅ Pedido enviado a Odoo</strong><br/>
     Referencia: <span class="odoo-ref" id="odoo-ref"></span> · Estado: Borrador<br/>
-    <span style="font-size:12px">El equipo de ventas revisará y confirmará el pedido.</span>
+    <span style="font-size:12px">El equipo de ventas revisará y confirmará el pedido.</span><br/>
+    <button onclick="pedidoNuevo()" style="margin-top:10px; padding:8px 18px; background:#1565c0;
+      color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">
+      📋 Pedido Nuevo
+    </button>
   </div>
   <div id="banner-err" class="banner err">
     <strong>❌ Error al enviar</strong><br/>
@@ -410,6 +499,172 @@ async function enviarPedido() {
     btn.classList.remove('loading');
   }
 }
+
+// ── Pedido Nuevo ────────────────────────────────────────────────────
+function pedidoNuevo() {
+  // Ocultar banners
+  document.getElementById('banner-ok').style.display  = 'none';
+  document.getElementById('banner-err').style.display = 'none';
+
+  // Limpiar cliente (mantener vendedor)
+  document.getElementById('nombre-cliente').value = '';
+  document.getElementById('rif-cliente').value    = '';
+  document.getElementById('ref-cliente').value    = '';
+  document.getElementById('notas').value          = '';
+
+  // Resetear descuentos
+  document.getElementById('chk-divisas').checked = true;
+  document.getElementById('chk-pronto').checked  = true;
+  document.getElementById('opt-divisas').classList.add('active');
+  document.getElementById('opt-pronto').classList.add('active');
+
+  // Limpiar líneas de productos
+  document.getElementById('lineas').innerHTML = '';
+  lineCount = 0;
+  addLine();
+
+  // Ir arriba
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Foco en cliente
+  setTimeout(() => document.getElementById('nombre-cliente').focus(), 300);
+}
+
+// ── Catálogo ────────────────────────────────────────────────────────
+let catalogoData = null;  // cache de productos
+
+function fmt(n) { return 'USD ' + parseFloat(n).toFixed(2); }
+
+async function abrirCatalogo() {
+  document.getElementById('modal-catalogo').classList.add('visible');
+  document.getElementById('cat-search').value = '';
+  document.body.style.overflow = 'hidden';
+
+  if (catalogoData !== null) {
+    // ya cargado — solo refiltrar
+    filtrarCatalogo('');
+    return;
+  }
+
+  // Primera carga
+  document.getElementById('cat-loading').style.display = 'block';
+  document.getElementById('cat-tabla').style.display   = 'none';
+  document.getElementById('cat-empty').style.display   = 'none';
+
+  try {
+    const res  = await fetch('/api/catalogo');
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      document.getElementById('cat-loading').textContent = '❌ Error: ' + (data.error || 'No se pudo cargar');
+      return;
+    }
+
+    catalogoData = data;
+    renderCatalogo(data);
+  } catch (e) {
+    document.getElementById('cat-loading').textContent = '❌ Error de conexión';
+  }
+}
+
+function cerrarCatalogo() {
+  document.getElementById('modal-catalogo').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function renderCatalogo(lista) {
+  const tbody = document.getElementById('cat-body');
+  tbody.innerHTML = '';
+
+  if (!lista.length) {
+    document.getElementById('cat-loading').style.display = 'none';
+    document.getElementById('cat-empty').style.display   = 'block';
+    document.getElementById('cat-tabla').style.display   = 'none';
+    return;
+  }
+
+  lista.forEach(p => {
+    const b    = p.precio_base;
+    const d75  = b * 0.25;
+    const d10  = b * 0.90;
+    const both = b * 0.25 * 0.90;
+    const thumb = p.imagen
+      ? `<div class="cat-thumb"><img src="${p.imagen}" alt="" /></div>`
+      : `<div class="cat-thumb">📦</div>`;
+    const tr = document.createElement('tr');
+    const nombreEsc = p.nombre.replace(/"/g, '&quot;');
+    const imgEsc    = (p.imagen || '').replace(/"/g, '&quot;');
+    tr.dataset.search = (p.codigo + ' ' + p.nombre).toLowerCase();
+    tr.innerHTML = `
+      <td>
+        <div class="cat-prod-wrap">
+          ${thumb}
+          <div>
+            <div class="cat-nombre">${p.nombre}</div>
+            <div class="cat-code">${p.codigo}</div>
+          </div>
+        </div>
+      </td>
+      <td class="price-base">${fmt(b)}</td>
+      <td class="price-d75">${fmt(d75)}</td>
+      <td class="price-d10">${fmt(d10)}</td>
+      <td class="price-both">${fmt(both)}</td>
+      <td style="text-align:center">
+        <button class="btn-usar"
+          onclick='agregarDesdeCatalogo("${p.codigo}","${nombreEsc}",${b},"${imgEsc}")'>
+          + Agregar
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('cat-loading').style.display = 'none';
+  document.getElementById('cat-empty').style.display   = 'none';
+  document.getElementById('cat-tabla').style.display   = 'table';
+}
+
+function filtrarCatalogo(q) {
+  const texto = q.toLowerCase();
+  let visibles = 0;
+  document.querySelectorAll('#cat-body tr').forEach(tr => {
+    const show = tr.dataset.search.includes(texto);
+    tr.style.display = show ? '' : 'none';
+    if (show) visibles++;
+  });
+  document.getElementById('cat-empty').style.display = visibles === 0 ? 'block' : 'none';
+}
+
+function agregarDesdeCatalogo(codigo, nombre, precio, imagen) {
+  cerrarCatalogo();
+  addLine();
+  const id = lineCount;  // addLine ya incrementó lineCount
+
+  const tr = document.getElementById('line-' + id);
+  if (!tr) return;
+
+  tr.querySelector('.code-input').value = codigo;
+
+  const descEl = document.getElementById('desc-' + id);
+  descEl.textContent = nombre;
+  descEl.className   = 'desc-cell ok';
+
+  document.getElementById('price-' + id).value = parseFloat(precio).toFixed(2);
+
+  const thumbEl = document.getElementById('thumb-' + id);
+  if (imagen) {
+    thumbEl.innerHTML = `<img src="${imagen}" alt="${nombre}" />`;
+  } else {
+    thumbEl.textContent = '📦';
+  }
+
+  recalc();
+  setTimeout(() => tr.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+}
+
+// Cerrar con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') cerrarCatalogo();
+});
 
 // ── Init ────────────────────────────────────────────────────────────
 addLine();
