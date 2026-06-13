@@ -43,7 +43,7 @@ def buscar_producto():
             models, uid,
             "product.product", "search_read",
             [[["default_code", "=", codigo]]],
-            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id"], "limit": 1}
+            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id", "image_128"], "limit": 1}
         )
         if not resultados:
             return jsonify({"error": "Código no encontrado"}), 404
@@ -81,11 +81,15 @@ def buscar_producto():
                         precio = (base - item.get("price_discount", 0)) * (1 - item.get("price_surcharge", 0) / 100)
                     break
 
+        imagen = p.get("image_128")
+        img_src = f"data:image/png;base64,{imagen}" if imagen else None
+
         return jsonify({
             "id":     p["id"],
             "codigo": p["default_code"],
             "nombre": p["name"],
-            "precio": precio
+            "precio": precio,
+            "imagen": img_src
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
