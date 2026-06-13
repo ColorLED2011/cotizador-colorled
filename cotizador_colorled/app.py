@@ -171,20 +171,9 @@ def enviar_pedido():
         )
         pricelist_id = pricelists[0]["id"] if pricelists else False
 
-        # 3. Calcular descuento combinado por línea
-        desc_pct = 0.0
-        notas_desc = []
-        if desc_divisas:
-            desc_pct  = 75.0
-            notas_desc.append("Descuento 75% pago divisas")
-        if desc_pronto:
-            # Se aplica sobre el precio ya descontado (cascada)
-            desc_pct  = 1 - (1 - desc_pct / 100) * (1 - 0.10)
-            desc_pct  = round(desc_pct * 100, 4)
-            notas_desc.append("Descuento 10% pronto pago 10 días")
-
-        # 4. Armar líneas del pedido
+        # 3. Armar líneas del pedido (sin descuento en línea — se informa en nota)
         order_lines = []
+        subtotal = 0.0
         for linea in lineas:
             product_ids = call(
                 models, uid, "product.product", "search",
@@ -193,18 +182,44 @@ def enviar_pedido():
             if not product_ids:
                 return jsonify({"error": f"Producto no encontrado: {linea['codigo']}"}), 400
 
+            monto_linea = linea["cantidad"] * linea["precio"]
+            subtotal   += monto_linea
+
             order_lines.append((0, 0, {
-                "product_id":       product_ids[0],
-                "name":             linea["descripcion"],
-                "product_uom_qty":  linea["cantidad"],
-                "price_unit":       linea["precio"],
-                "discount":         desc_pct,
+                "product_id":      product_ids[0],
+                "name":            linea["descripcion"],
+                "product_uom_qty": linea["cantidad"],
+                "price_unit":      linea["precio"],
             }))
 
-        # 5. Notas finales
+        # 4. Calcular descuentos e incluirlos como nota informativa
+        lineas_nota = []
+        total_final = subtotal
+
+        if desc_divisas:
+            monto_div   = subtotal * 0.75
+            total_final -= monto_div
+            lineas_nota.append(
+                f"  • Descuento 75% pago divisas:          - USD {monto_div:,.2f}"
+            )
+        if desc_pronto:
+            monto_pp    = total_final * 0.10
+            total_final -= monto_pp
+            lineas_nota.append(
+                f"  • Descuento 10% pronto pago 10 días:   - USD {monto_pp:,.2f}"
+            )
+
         nota_completa = notas
-        if notas_desc:
-            nota_completa = "\n".join(notas_desc) + ("\n\n" + notas if notas else "")
+        if lineas_nota:
+            bloque = (
+                "──────────────────────────────────────────\n"
+                "DESCUENTOS ESPECIALES APLICABLES:\n"
+                f"  • Subtotal lista:                        USD {subtotal:,.2f}\n"
+                + "\n".join(lineas_nota) + "\n"
+                f"  ► TOTAL CON DESCUENTOS:                  USD {total_final:,.2f}\n"
+                "──────────────────────────────────────────"
+            )
+            nota_completa = bloque + ("\n\n" + notas if notas else "")
 
         # 6. Crear pedido
         order_vals = {
@@ -227,6 +242,85 @@ def enviar_pedido():
 
         return jsonify({"ok": True, "referencia": order_name, "id": order_id})
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/catalogo")
+def catalogo():
+    """Devuelve todos los productos activos con precios USD BASE y descuentos."""
+    try:
+        uid, models = get_odoo()
+
+        # 1. Buscar tarifa USD BASE
+        pricelists = call(models, uid, "product.pricelist", "search_read",
+            [[["name", "ilike", "USD BASE"]]], {"fields": ["id"], "limit": 1})
+        pl_id = pricelists[0]["id"] if pricelists else None
+
+        # 2. Obtener TODOS los items de la tarifa en una sola llamada
+        pl_by_variant  = {}
+        pl_by_template = {}
+        pl_global      = None
+
+        if pl_id:
+            items = call(models, uid, "product.pricelist.item", "search_read",
+                [[["pricelist_id", "=", pl_id]]],
+                {"fields": ["applied_on", "product_id", "product_tmpl_id",
+                            "compute_price", "fixed_price", "percent_price",
+                            "price_discount", "price_surcharge"]})
+            for item in items:
+                if item["applied_on"] == "0_product_variant" and item["product_id"]:
+                    pid = item["product_id"][0] if isinstance(item["product_id"], list) else item["product_id"]
+                    pl_by_variant[pid] = item
+                elif item["applied_on"] == "1_product" and item["product_tmpl_id"]:
+                    tid = item["product_tmpl_id"][0] if isinstance(item["product_tmpl_id"], list) else item["product_tmpl_id"]
+                    pl_by_template[tid] = item
+                elif item["applied_on"] == "3_global":
+                    pl_global = item
+
+        # 3. Obtener todos los productos activos con código
+        productos = call(models, uid, "product.product", "search_read",
+            [[["active", "=", True], ["default_code", "!=", False], ["sale_ok", "=", True]]],
+            {"fields": ["id", "name", "default_code", "list_price", "product_tmpl_id", "image_128"],
+             "order": "default_code asc"})
+
+        # 4. Calcular precio USD BASE por producto (cascada variante → plantilla → global)
+        resultado = []
+        for p in productos:
+            tmpl_id     = p["product_tmpl_id"][0] if isinstance(p.get("product_tmpl_id"), list) else p.get("product_tmpl_id")
+            precio_lista = p["list_price"]
+            precio_base  = precio_lista  # fallback
+
+            if p["id"] in pl_by_variant:
+                item = pl_by_variant[p["id"]]
+            elif tmpl_id in pl_by_template:
+                item = pl_by_template[tmpl_id]
+            elif pl_global:
+                item = pl_global
+            else:
+                item = None
+
+            if item:
+                if item["compute_price"] == "fixed":
+                    precio_base = item["fixed_price"]
+                elif item["compute_price"] == "percentage":
+                    precio_base = precio_lista * (1 - item["percent_price"] / 100)
+                elif item["compute_price"] == "formula":
+                    precio_base = (precio_lista - item.get("price_discount", 0)) * (1 - item.get("price_surcharge", 0) / 100)
+
+            imagen = p.get("image_128")
+            img_src = f"data:image/png;base64,{imagen}" if imagen else None
+
+            resultado.append({
+                "id":           p["id"],
+                "codigo":       p["default_code"],
+                "nombre":       p["name"],
+                "precio_lista": precio_lista,
+                "precio_base":  precio_base,
+                "imagen":       img_src,
+            })
+
+        return jsonify(resultado)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
