@@ -192,43 +192,52 @@ def enviar_pedido():
                 "price_unit":      linea["precio"],
             }))
 
-        # 4. Calcular descuentos e incluirlos como tabla HTML en la nota
-        total_final  = subtotal
-        filas_desc   = ""
+        # 4. Calcular descuentos e incluirlos como tabla HTML compacta en la nota
+        total_final = subtotal
+        filas_desc  = ""
+        hay_divisas = False
 
         if desc_divisas:
             monto_div    = subtotal * 0.75
             total_final -= monto_div
+            hay_divisas  = True
             filas_desc  += (
-                f'<tr style="color:#2e7d32;">'
-                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;">Descuento 75% — Pago en divisas</td>'
-                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">− USD {monto_div:,.2f}</td>'
+                f'<tr>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;">Descuento 75% &mdash; Pago en divisas</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_div:,.2f}</td>'
+                f'<td style="width:8px;border-bottom:1px solid #eee;"></td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
+                f'<span style="font-size:10px;color:#888;font-weight:400;">Total desc. 75%</span><br/>USD {total_final:,.2f}</td>'
                 f'</tr>'
             )
+
         if desc_pronto:
             monto_pp     = total_final * 0.10
             total_final -= monto_pp
+            etiqueta_pp  = "Total desc. 75%+10%" if hay_divisas else "Total desc. 10%"
             filas_desc  += (
-                f'<tr style="color:#2e7d32;">'
-                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;">Descuento 10% — Pronto pago 10 días</td>'
-                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;">− USD {monto_pp:,.2f}</td>'
+                f'<tr>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;">Descuento 10% &mdash; Pronto pago 10 d&iacute;as</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_pp:,.2f}</td>'
+                f'<td style="width:8px;border-bottom:1px solid #eee;"></td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
+                f'<span style="font-size:10px;color:#888;font-weight:400;">{etiqueta_pp}</span><br/>USD {total_final:,.2f}</td>'
                 f'</tr>'
             )
 
         nota_completa = notas
         if filas_desc:
             tabla_html = (
-                f'<table style="width:100%;border-collapse:collapse;font-size:13px;font-family:Arial;">'
+                f'<table style="width:100%;border-collapse:collapse;font-size:12px;font-family:Arial;">'
                 f'<tr style="background:#1a1a2e;color:#ffffff;">'
-                f'<td colspan="2" style="padding:8px 12px;font-weight:bold;font-size:12px;letter-spacing:0.04em;">'
-                f'🏷 Descuentos especiales aplicables</td></tr>'
-                f'<tr><td style="padding:7px 12px;border-bottom:1px solid #eee;color:#444;">Subtotal a precio lista (USD BASE)</td>'
-                f'<td style="padding:7px 12px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#444;">USD {subtotal:,.2f}</td></tr>'
+                f'<td colspan="4" style="padding:7px 10px;font-weight:bold;font-size:11px;letter-spacing:0.05em;">'
+                f'Descuentos especiales aplicables</td></tr>'
+                f'<tr>'
+                f'<td colspan="3" style="padding:6px 10px;border-bottom:1px solid #eee;color:#555;">Subtotal a precio lista (USD BASE)</td>'
+                f'<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#555;">USD {subtotal:,.2f}</td>'
+                f'</tr>'
                 f'{filas_desc}'
-                f'<tr style="background:#f1f8e9;">'
-                f'<td style="padding:9px 12px;font-weight:bold;color:#1b5e20;font-size:14px;">✔ Total a pagar con descuentos</td>'
-                f'<td style="padding:9px 12px;font-weight:bold;color:#1b5e20;font-size:14px;text-align:right;white-space:nowrap;">USD {total_final:,.2f}</td>'
-                f'</tr></table>'
+                f'</table>'
             )
             if notas:
                 tabla_html += f'<p style="margin-top:10px;font-size:13px;">{notas}</p>'
