@@ -206,7 +206,7 @@ def enviar_pedido():
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;white-space:nowrap;">Descuento 75% &mdash; Pago en divisas</td>'
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_div:,.2f}</td>'
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
-                f'<span style="color:#888;font-weight:400;">Total desc. 75%:</span> USD {total_final:,.2f}</td>'
+                f'<span style="color:#888;font-weight:700;">Total desc. 75%:</span> USD {total_final:,.2f}</td>'
                 f'</tr>'
             )
 
@@ -219,19 +219,19 @@ def enviar_pedido():
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;white-space:nowrap;">Descuento 10% &mdash; Pronto pago 10 d&iacute;as</td>'
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_pp:,.2f}</td>'
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
-                f'<span style="color:#888;font-weight:400;">{etiqueta_pp}:</span> USD {total_final:,.2f}</td>'
+                f'<span style="color:#888;font-weight:700;">{etiqueta_pp}:</span> USD {total_final:,.2f}</td>'
                 f'</tr>'
             )
 
         nota_completa = notas
         if filas_desc:
             tabla_html = (
-                f'<table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Arial;line-height:1.3;">'
+                f'<table style="width:100%;border-collapse:collapse;font-size:14px;font-family:Arial;line-height:1.3;">'
                 f'<tr style="background:#1a1a2e;color:#ffffff;">'
-                f'<td colspan="3" style="padding:3px 10px;font-weight:bold;font-size:11px;letter-spacing:0.05em;">'
+                f'<td colspan="3" style="padding:3px 10px;font-weight:bold;font-size:14px;letter-spacing:0.05em;">'
                 f'Descuentos especiales aplicables</td></tr>'
                 f'<tr>'
-                f'<td colspan="2" style="padding:1px 10px;border-bottom:1px solid #eee;color:#555;">Subtotal a precio lista (USD BASE)</td>'
+                f'<td colspan="2" style="padding:1px 10px;border-bottom:1px solid #eee;color:#555;font-weight:700;">Subtotal a precio lista (USD BASE)</td>'
                 f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#555;">USD {subtotal:,.2f}</td>'
                 f'</tr>'
                 f'{filas_desc}'
