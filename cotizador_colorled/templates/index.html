@@ -4,6 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Cotizador COLOR LED</title>
+
+<!-- Icono para pantalla de inicio (mÃ³vil) -->
+<link rel="icon" type="image/png" href="/static/icon.png" />
+<link rel="apple-touch-icon" href="/static/icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="COLOR LED" />
+<meta name="theme-color" content="#1a1a2e" />
+<link rel="manifest" href="/static/manifest.json" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: Arial, sans-serif; background: #f4f6f8; color: #2c2c2c; font-size: 14px; }
@@ -78,14 +86,14 @@
   .disc-option .dp { margin-left: auto; font-size: 13px; font-weight: 700; color: #2e7d32; }
   .disc-option.active { background: #e8f5e9; border-color: #a5d6a7; }
 
-  /* Botón catálogo */
+  /* BotÃ³n catÃ¡logo */
   .btn-catalogo { display: inline-flex; align-items: center; gap: 6px;
                   padding: 7px 14px; background: #fff; border: 1.5px solid #1565c0;
                   color: #1565c0; border-radius: 8px; font-size: 13px; font-weight: 600;
                   cursor: pointer; margin-right: 10px; }
   .btn-catalogo:hover { background: #e8f4fd; }
 
-  /* Modal catálogo */
+  /* Modal catÃ¡logo */
   #modal-catalogo { display: none; position: fixed; inset: 0; z-index: 1000;
                     background: rgba(0,0,0,0.55); }
   #modal-catalogo.visible { display: flex; align-items: stretch; justify-content: center; }
@@ -101,7 +109,7 @@
                      color: #888; line-height: 1; padding: 0 4px; }
   .btn-close-modal:hover { color: #c62828; }
 
-  /* Tabla catálogo */
+  /* Tabla catÃ¡logo */
   .modal-body { overflow-y: auto; flex: 1; }
   .cat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .cat-table thead { position: sticky; top: 0; background: #f8fafc; z-index: 1; }
@@ -130,14 +138,14 @@
   #cat-loading { padding: 40px; text-align: center; color: #888; font-size: 14px; }
   #cat-empty   { display: none; padding: 30px; text-align: center; color: #aaa; font-size: 13px; }
 
-  /* Botón enviar */
+  /* BotÃ³n enviar */
   .btn-enviar { width: 100%; padding: 13px; background: #1565c0; color: #fff;
                 border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
                 cursor: pointer; margin-top: 4px; letter-spacing: 0.02em; }
   .btn-enviar:hover { background: #0d47a1; }
   .btn-enviar:disabled { background: #90caf9; cursor: not-allowed; }
 
-  /* Banner éxito / error */
+  /* Banner Ã©xito / error */
   .banner { display: none; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; font-size: 14px; }
   .banner.ok  { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
   .banner.err { background: #fdecea; border: 1px solid #ef9a9a; color: #b71c1c; }
@@ -151,13 +159,13 @@
           border-top-color: transparent; border-radius: 50%;
           animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
 
-  /* ── Botón ficha técnica (en catálogo) ── */
+  /* ââ BotÃ³n ficha tÃ©cnica (en catÃ¡logo) ââ */
   .btn-ficha { display: inline-block; margin-top: 5px; padding: 3px 8px; font-size: 11px;
                background: none; border: 1px solid #1565c0; color: #1565c0;
                border-radius: 4px; cursor: pointer; font-weight: 600; }
   .btn-ficha:hover { background: #e8f4fd; }
 
-  /* ── Modal ficha técnica ── */
+  /* ââ Modal ficha tÃ©cnica ââ */
   #modal-ficha { display: none; position: fixed; inset: 0; z-index: 1100;
                  background: rgba(0,0,0,0.65); overflow-y: auto; padding: 20px 12px 40px; }
   #modal-ficha.visible { display: block; }
@@ -170,7 +178,7 @@
   .btn-volver:hover { text-decoration: underline; }
   .ficha-body  { padding: 24px; }
 
-  /* Sección superior */
+  /* SecciÃ³n superior */
   .ficha-top   { display: flex; gap: 24px; margin-bottom: 20px; }
   .ficha-img   { width: 190px; height: 190px; flex-shrink: 0; border: 1px solid #eee;
                  border-radius: 8px; overflow: hidden; display: flex; align-items: center;
@@ -222,25 +230,25 @@
 <div class="container">
 
   <div class="header">
-    <h1>📋 Nuevo presupuesto — COLOR LED</h1>
+    <h1>ð Nuevo presupuesto â COLOR LED</h1>
     <div style="display:flex; align-items:center; gap:0">
-      <button class="btn-catalogo" onclick="abrirCatalogo()">📚 Catálogo</button>
-      <span class="badge">💵 Tarifa USD BASE</span>
+      <button class="btn-catalogo" onclick="abrirCatalogo()">ð CatÃ¡logo</button>
+      <span class="badge">ðµ Tarifa USD BASE</span>
     </div>
   </div>
 
-  <!-- ── Modal catálogo ─────────────────────────────────── -->
-  <div id="modal-catalogo" role="dialog" aria-modal="true" aria-label="Catálogo de productos"
+  <!-- ââ Modal catÃ¡logo âââââââââââââââââââââââââââââââââââ -->
+  <div id="modal-catalogo" role="dialog" aria-modal="true" aria-label="CatÃ¡logo de productos"
        onclick="if(event.target===this)cerrarCatalogo()">
     <div class="modal-panel">
       <div class="modal-head">
-        <h2>📚 Catálogo de productos</h2>
+        <h2>ð CatÃ¡logo de productos</h2>
         <input class="modal-search" type="text" id="cat-search"
-               placeholder="Buscar por código o descripción…" oninput="filtrarCatalogo(this.value)" />
-        <button class="btn-close-modal" onclick="cerrarCatalogo()" title="Cerrar">✕</button>
+               placeholder="Buscar por cÃ³digo o descripciÃ³nâ¦" oninput="filtrarCatalogo(this.value)" />
+        <button class="btn-close-modal" onclick="cerrarCatalogo()" title="Cerrar">â</button>
       </div>
       <div class="modal-body">
-        <div id="cat-loading">⏳ Cargando productos desde Odoo…</div>
+        <div id="cat-loading">â³ Cargando productos desde Odooâ¦</div>
         <div id="cat-empty">No se encontraron productos.</div>
         <table class="cat-table" id="cat-tabla" style="display:none">
           <thead>
@@ -258,37 +266,44 @@
     </div>
   </div>
 
-  <!-- ── Modal ficha técnica ──────────────────────────── -->
+  <!-- ââ Modal ficha tÃ©cnica ââââââââââââââââââââââââââââ -->
   <div id="modal-ficha" onclick="if(event.target===this)cerrarFicha()">
     <div class="ficha-panel">
       <div class="ficha-head">
-        <button class="btn-volver" onclick="cerrarFicha()">← Volver al catálogo</button>
-        <button class="btn-close-modal" onclick="cerrarFicha()" style="margin-left:auto" title="Cerrar">✕</button>
+        <button class="btn-volver" onclick="cerrarFicha()">â Volver al catÃ¡logo</button>
+        <button class="btn-close-modal" onclick="cerrarFicha()" style="margin-left:auto" title="Cerrar">â</button>
       </div>
       <div class="ficha-body" id="ficha-body">
-        <div class="ficha-loading">⏳ Cargando ficha técnica…</div>
+        <div class="ficha-loading">â³ Cargando ficha tÃ©cnicaâ¦</div>
       </div>
     </div>
   </div>
 
   <!-- Banners -->
   <div id="banner-ok" class="banner ok">
-    <strong>✅ Pedido enviado a Odoo</strong><br/>
-    Referencia: <span class="odoo-ref" id="odoo-ref"></span> · Estado: Borrador<br/>
-    <span style="font-size:12px">El equipo de ventas revisará y confirmará el pedido.</span><br/>
-    <button onclick="pedidoNuevo()" style="margin-top:10px; padding:8px 18px; background:#1565c0;
-      color:#fff; border:none; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer;">
-      📋 Pedido Nuevo
-    </button>
+    <strong>â Pedido enviado a Odoo</strong><br/>
+    Referencia: <span class="odoo-ref" id="odoo-ref"></span> Â· Estado: Borrador<br/>
+    <span style="font-size:12px">Si en Odoo modifican productos, los descuentos se <strong>actualizan automÃ¡ticamente</strong> en ~2 min. TambiÃ©n puedes forzar la actualizaciÃ³n ahora:</span><br/>
+    <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+      <button id="btn-recalcular" onclick="recalcularDescuentos()"
+        style="padding:8px 18px;background:#e65100;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">
+        ð Recalcular Descuentos
+      </button>
+      <button onclick="pedidoNuevo()"
+        style="padding:8px 18px;background:#1565c0;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">
+        ð Pedido Nuevo
+      </button>
+    </div>
+    <div id="recalc-msg" style="margin-top:8px;font-size:12px;"></div>
   </div>
   <div id="banner-err" class="banner err">
-    <strong>❌ Error al enviar</strong><br/>
+    <strong>â Error al enviar</strong><br/>
     <span id="err-msg"></span>
   </div>
 
   <!-- Vendedor -->
   <div class="card">
-    <div class="card-title">👤 Datos del vendedor</div>
+    <div class="card-title">ð¤ Datos del vendedor</div>
     <div class="field-grid one">
       <div class="field">
         <label>Nombre del vendedor</label>
@@ -299,11 +314,11 @@
 
   <!-- Cliente -->
   <div class="card">
-    <div class="card-title">🏪 Cliente</div>
+    <div class="card-title">ðª Cliente</div>
     <div class="field-grid">
       <div class="field">
-        <label>Nombre / Razón social</label>
-        <input type="text" id="nombre-cliente" placeholder="Ferretería El Rayo C.A." oninput="updateRef()" />
+        <label>Nombre / RazÃ³n social</label>
+        <input type="text" id="nombre-cliente" placeholder="FerreterÃ­a El Rayo C.A." oninput="updateRef()" />
       </div>
       <div class="field">
         <label>RUC / RIF</label>
@@ -314,19 +329,19 @@
       <div class="field">
         <label>Referencia del cliente (en Odoo)</label>
         <input type="text" id="ref-cliente" readonly />
-        <div class="ref-hint">⚙️ Se genera automáticamente con el nombre del vendedor</div>
+        <div class="ref-hint">Úï¸ Se genera automÃ¡ticamente con el nombre del vendedor</div>
       </div>
     </div>
   </div>
 
   <!-- Productos -->
   <div class="card">
-    <div class="card-title">📦 Productos</div>
+    <div class="card-title">ð¦ Productos</div>
     <table class="product-table">
       <thead>
         <tr>
-          <th style="width:13%">Código</th>
-          <th style="width:44%">Descripción</th>
+          <th style="width:13%">CÃ³digo</th>
+          <th style="width:44%">DescripciÃ³n</th>
           <th style="width:10%; text-align:center">Cant.</th>
           <th style="width:18%; text-align:right">Precio unit.<br><small style="font-weight:400">(USD BASE)</small></th>
           <th style="width:11%; text-align:right">Subtotal</th>
@@ -335,16 +350,16 @@
       </thead>
       <tbody id="lineas"></tbody>
     </table>
-    <button class="btn-add" onclick="addLine()">＋ Agregar producto</button>
+    <button class="btn-add" onclick="addLine()">ï¼ Agregar producto</button>
 
     <div class="totals">
       <div class="row"><span>Subtotal lista:</span><span id="sub">USD 0.00</span></div>
       <div class="disc-row" id="row-divisas" style="display:none">
-        <span>✔ Descuento 75% pago divisas</span>
+        <span>â Descuento 75% pago divisas</span>
         <span id="monto-divisas">- USD 0.00</span>
       </div>
       <div class="disc-row" id="row-pronto" style="display:none">
-        <span>✔ Descuento 10% pronto pago 10 días</span>
+        <span>â Descuento 10% pronto pago 10 dÃ­as</span>
         <span id="monto-pronto">- USD 0.00</span>
       </div>
       <div class="total-row"><span>Total:</span><span id="total">USD 0.00</span></div>
@@ -353,7 +368,7 @@
 
   <!-- Descuentos -->
   <div class="card">
-    <div class="card-title">🏷️ Descuentos especiales</div>
+    <div class="card-title">ð·ï¸ Descuentos especiales</div>
     <label class="disc-option active" id="opt-divisas">
       <input type="checkbox" id="chk-divisas" checked onchange="toggleDisc('divisas'); recalc()" />
       <span class="dl">Descuento 75% pago divisas</span>
@@ -361,14 +376,14 @@
     </label>
     <label class="disc-option active" id="opt-pronto">
       <input type="checkbox" id="chk-pronto" checked onchange="toggleDisc('pronto'); recalc()" />
-      <span class="dl">Descuento 10% pronto pago 10 días</span>
+      <span class="dl">Descuento 10% pronto pago 10 dÃ­as</span>
       <span class="dp">-10%</span>
     </label>
   </div>
 
   <!-- Notas -->
   <div class="card">
-    <div class="card-title">📝 Notas internas</div>
+    <div class="card-title">ð Notas internas</div>
     <div class="field-grid one">
       <div class="field">
         <textarea id="notas" rows="3" placeholder="Condiciones especiales, forma de entrega, observaciones..."></textarea>
@@ -378,13 +393,13 @@
 
   <button class="btn-enviar" id="btn-enviar" onclick="enviarPedido()">
     <span class="spinner"><span class="spin"></span>Enviando...</span>
-    <span class="btn-text">📤 Enviar Pedido</span>
+    <span class="btn-text">ð¤ Enviar Pedido</span>
   </button>
 
 </div>
 
 <script>
-// ── Referencia ──────────────────────────────────────────────────────
+// ââ Referencia ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function updateRef() {
   document.getElementById('ref-cliente').value =
     document.getElementById('vendedor').value.trim();
@@ -395,7 +410,7 @@ function toggleDisc(id) {
   document.getElementById('opt-' + id).classList.toggle('active', chk.checked);
 }
 
-// ── Líneas de productos ─────────────────────────────────────────────
+// ââ LÃ­neas de productos âââââââââââââââââââââââââââââââââââââââââââââ
 const tbody = document.getElementById('lineas');
 let lineCount = 0;
 
@@ -408,8 +423,8 @@ function addLine() {
          oninput="buscarProducto(this, ${id})" style="width:100%" /></td>
     <td>
       <div class="desc-wrap">
-        <div class="prod-thumb" id="thumb-${id}">📦</div>
-        <div class="desc-cell" id="desc-${id}">—</div>
+        <div class="prod-thumb" id="thumb-${id}">ð¦</div>
+        <div class="desc-cell" id="desc-${id}">â</div>
       </div>
     </td>
     <td style="text-align:center">
@@ -420,7 +435,7 @@ function addLine() {
              id="price-${id}" onchange="recalc()" />
     </td>
     <td class="sub-col" id="subtotal-${id}">USD 0.00</td>
-    <td><button class="btn-remove" onclick="removeLine(${id})" title="Eliminar">✕</button></td>
+    <td><button class="btn-remove" onclick="removeLine(${id})" title="Eliminar">â</button></td>
   `;
   tbody.appendChild(tr);
   tr.querySelector('.code-input').focus();
@@ -432,7 +447,7 @@ function removeLine(id) {
   if (tr) { tr.remove(); recalc(); }
 }
 
-// ── Búsqueda de producto en Odoo ───────────────────────────────────
+// ââ BÃºsqueda de producto en Odoo âââââââââââââââââââââââââââââââââââ
 const debounceTimers = {};
 function buscarProducto(input, id) {
   const code = input.value.trim().toUpperCase();
@@ -442,7 +457,7 @@ function buscarProducto(input, id) {
   const priceEl = document.getElementById('price-' + id);
 
   if (!code) {
-    descEl.textContent = '—';
+    descEl.textContent = 'â';
     descEl.className = 'desc-cell';
     priceEl.value = '0.00';
     recalc();
@@ -463,24 +478,24 @@ function buscarProducto(input, id) {
         if (data.imagen) {
           thumbEl.innerHTML = `<img src="${data.imagen}" alt="${data.nombre}" />`;
         } else {
-          thumbEl.textContent = '📦';
+          thumbEl.textContent = 'ð¦';
         }
       } else {
-        descEl.textContent = data.error || 'Código no encontrado';
+        descEl.textContent = data.error || 'CÃ³digo no encontrado';
         descEl.className = 'desc-cell err';
         priceEl.value = '0.00';
-        thumbEl.textContent = '📦';
+        thumbEl.textContent = 'ð¦';
       }
     } catch {
-      descEl.textContent = 'Error de conexión';
+      descEl.textContent = 'Error de conexiÃ³n';
       descEl.className = 'desc-cell err';
-      thumbEl.textContent = '📦';
+      thumbEl.textContent = 'ð¦';
     }
     recalc();
   }, 500);
 }
 
-// ── Recalcular totales ──────────────────────────────────────────────
+// ââ Recalcular totales ââââââââââââââââââââââââââââââââââââââââââââââ
 function recalc() {
   let subtotal = 0;
   tbody.querySelectorAll('tr').forEach(tr => {
@@ -512,7 +527,7 @@ function recalc() {
   document.getElementById('total').textContent = 'USD ' + (base2 - montoProPago).toFixed(2);
 }
 
-// ── Enviar pedido a Odoo ────────────────────────────────────────────
+// ââ Enviar pedido a Odoo ââââââââââââââââââââââââââââââââââââââââââââ
 async function enviarPedido() {
   document.getElementById('banner-ok').style.display  = 'none';
   document.getElementById('banner-err').style.display = 'none';
@@ -538,7 +553,7 @@ async function enviarPedido() {
     lineas.push({ codigo: code, descripcion: descEl.textContent, cantidad: qty, precio: price });
   });
 
-  if (!valido)        { alert('Hay productos con códigos inválidos. Corrígelos antes de enviar.'); return; }
+  if (!valido)        { alert('Hay productos con cÃ³digos invÃ¡lidos. CorrÃ­gelos antes de enviar.'); return; }
   if (!lineas.length) { alert('Agrega al menos un producto.'); return; }
 
   const btn = document.getElementById('btn-enviar');
@@ -562,6 +577,8 @@ async function enviarPedido() {
     const data = await res.json();
     if (res.ok && data.ok) {
       document.getElementById('odoo-ref').textContent = data.referencia;
+      document.getElementById('recalc-msg').textContent = '';
+      window._lastOrderId = data.id;   // guardar para recalcular si modifican en Odoo
       document.getElementById('banner-ok').style.display = 'block';
       document.getElementById('banner-ok').scrollIntoView({ behavior: 'smooth' });
     } else {
@@ -578,8 +595,40 @@ async function enviarPedido() {
   }
 }
 
-// ── Pedido Nuevo ────────────────────────────────────────────────────
+// ââ Recalcular descuentos con el total real de Odoo ââââââââââââââââ
+async function recalcularDescuentos() {
+  const orderId = window._lastOrderId;
+  if (!orderId) { alert('No hay pedido activo.'); return; }
+
+  const btn = document.getElementById('btn-recalcular');
+  const msg = document.getElementById('recalc-msg');
+  btn.disabled = true;
+  btn.textContent = 'â³ Recalculando...';
+  msg.textContent = '';
+
+  try {
+    const res  = await fetch(`/api/recalcular/${orderId}`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      const fmt = n => 'USD ' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      msg.innerHTML = `â Descuentos actualizados Â· Nuevo subtotal: <strong>${fmt(data.subtotal_nuevo)}</strong>`;
+      msg.style.color = '#1b5e20';
+    } else {
+      msg.textContent = 'â ' + (data.error || 'Error al recalcular');
+      msg.style.color = '#b71c1c';
+    }
+  } catch (e) {
+    msg.textContent = 'â No se pudo conectar.';
+    msg.style.color = '#b71c1c';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ð Recalcular Descuentos';
+  }
+}
+
+// ââ Pedido Nuevo ââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function pedidoNuevo() {
+  window._lastOrderId = null;
   // Ocultar banners
   document.getElementById('banner-ok').style.display  = 'none';
   document.getElementById('banner-err').style.display = 'none';
@@ -596,7 +645,7 @@ function pedidoNuevo() {
   document.getElementById('opt-divisas').classList.add('active');
   document.getElementById('opt-pronto').classList.add('active');
 
-  // Limpiar líneas de productos
+  // Limpiar lÃ­neas de productos
   document.getElementById('lineas').innerHTML = '';
   lineCount = 0;
   addLine();
@@ -608,7 +657,7 @@ function pedidoNuevo() {
   setTimeout(() => document.getElementById('nombre-cliente').focus(), 300);
 }
 
-// ── Catálogo ────────────────────────────────────────────────────────
+// ââ CatÃ¡logo ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let catalogoData = null;  // cache de productos
 
 function fmt(n) { return 'USD ' + parseFloat(n).toFixed(2); }
@@ -619,7 +668,7 @@ async function abrirCatalogo() {
   document.body.style.overflow = 'hidden';
 
   if (catalogoData !== null) {
-    // ya cargado — solo refiltrar
+    // ya cargado â solo refiltrar
     filtrarCatalogo('');
     return;
   }
@@ -634,14 +683,14 @@ async function abrirCatalogo() {
     const data = await res.json();
 
     if (!res.ok || data.error) {
-      document.getElementById('cat-loading').textContent = '❌ Error: ' + (data.error || 'No se pudo cargar');
+      document.getElementById('cat-loading').textContent = 'â Error: ' + (data.error || 'No se pudo cargar');
       return;
     }
 
     catalogoData = data;
     renderCatalogo(data);
   } catch (e) {
-    document.getElementById('cat-loading').textContent = '❌ Error de conexión';
+    document.getElementById('cat-loading').textContent = 'â Error de conexiÃ³n';
   }
 }
 
@@ -667,7 +716,7 @@ function renderCatalogo(lista) {
     const both = b * 0.25 * 0.90;
     const thumb = p.imagen
       ? `<div class="cat-thumb"><img src="${p.imagen}" alt="" /></div>`
-      : `<div class="cat-thumb">📦</div>`;
+      : `<div class="cat-thumb">ð¦</div>`;
     const tr = document.createElement('tr');
     const nombreEsc = p.nombre.replace(/"/g, '&quot;');
     const imgEsc    = (p.imagen || '').replace(/"/g, '&quot;');
@@ -679,7 +728,7 @@ function renderCatalogo(lista) {
           <div>
             <div class="cat-nombre">${p.nombre}</div>
             <div class="cat-code">${p.codigo}</div>
-            <button class="btn-ficha" onclick="abrirFicha('${p.codigo}')">📋 Ficha técnica</button>
+            <button class="btn-ficha" onclick="abrirFicha('${p.codigo}')">ð Ficha tÃ©cnica</button>
           </div>
         </div>
       </td>
@@ -714,7 +763,7 @@ function filtrarCatalogo(q) {
 function agregarDesdeCatalogo(codigo, nombre, precio, imagen) {
   cerrarCatalogo();
   addLine();
-  const id = lineCount;  // addLine ya incrementó lineCount
+  const id = lineCount;  // addLine ya incrementÃ³ lineCount
 
   const tr = document.getElementById('line-' + id);
   if (!tr) return;
@@ -731,14 +780,14 @@ function agregarDesdeCatalogo(codigo, nombre, precio, imagen) {
   if (imagen) {
     thumbEl.innerHTML = `<img src="${imagen}" alt="${nombre}" />`;
   } else {
-    thumbEl.textContent = '📦';
+    thumbEl.textContent = 'ð¦';
   }
 
   recalc();
   setTimeout(() => tr.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
 }
 
-// ── Ficha técnica ───────────────────────────────────────────────────
+// ââ Ficha tÃ©cnica âââââââââââââââââââââââââââââââââââââââââââââââââââ
 const fichaCache = {};
 
 async function abrirFicha(codigo) {
@@ -752,20 +801,20 @@ async function abrirFicha(codigo) {
     return;
   }
 
-  cuerpo.innerHTML = '<div class="ficha-loading">⏳ Cargando ficha técnica…</div>';
+  cuerpo.innerHTML = '<div class="ficha-loading">â³ Cargando ficha tÃ©cnicaâ¦</div>';
 
   try {
     const res  = await fetch(`/api/ficha/${encodeURIComponent(codigo)}`);
     const data = await res.json();
     if (!res.ok || data.error) {
-      cuerpo.innerHTML = `<div class="ficha-loading">❌ ${data.error || 'Error al cargar'}</div>`;
+      cuerpo.innerHTML = `<div class="ficha-loading">â ${data.error || 'Error al cargar'}</div>`;
       return;
     }
     const html = construirFicha(data);
     fichaCache[codigo] = html;
     cuerpo.innerHTML   = html;
   } catch (e) {
-    cuerpo.innerHTML = '<div class="ficha-loading">❌ Error de conexión</div>';
+    cuerpo.innerHTML = '<div class="ficha-loading">â Error de conexiÃ³n</div>';
   }
 }
 
@@ -780,7 +829,7 @@ function construirFicha(d) {
 
   const imgHtml = d.imagen
     ? `<img src="${d.imagen}" alt="${d.nombre}" />`
-    : '💡';
+    : 'ð¡';
 
   // Separar "Aplicaciones" del resto de specs
   const aplicSpec = d.specs.find(s => /aplicaci/i.test(s.atributo));
@@ -793,7 +842,7 @@ function construirFicha(d) {
     ).join('');
     specsHtml = `
       <div class="specs-wrap">
-        <div class="specs-header">Especificaciones técnicas</div>
+        <div class="specs-header">Especificaciones tÃ©cnicas</div>
         <table class="specs-table"><tbody>${filas}</tbody></table>
       </div>`;
   }
@@ -814,7 +863,7 @@ function construirFicha(d) {
         <div class="ficha-codigo">${d.codigo}</div>
         <div class="ficha-nombre">${d.nombre}</div>
         ${d.categoria ? `<div class="ficha-categ">${d.categoria}</div>` : ''}
-        <span class="ficha-badge">● Disponible</span>
+        <span class="ficha-badge">â Disponible</span>
         ${descHtml}
       </div>
     </div>
@@ -847,7 +896,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Init ────────────────────────────────────────────────────────────
+// ââ Init ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 addLine();
 </script>
 </body>
