@@ -1,5 +1,9 @@
 import os
+import re
+import threading
+import time
 import xmlrpc.client
+from datetime import datetime as _dt
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
@@ -22,6 +26,74 @@ def call(models, uid, model, method, args, kwargs=None):
         ODOO_DB, uid, ODOO_PASS,
         model, method, args, kwargs or {}
     )
+
+
+# ── Helper: genera tabla HTML de descuentos + marcador oculto ──────
+def _generar_nota(subtotal, desc_divisas, desc_pronto, notas="", vendedor="", fecha=""):
+    """
+    Devuelve el campo 'note' completo con:
+    - Marcador oculto <!-- CLDESC:d=X,p=X --> para recalculación posterior
+    - Tabla HTML de descuentos con el subtotal correcto
+    """
+    total_final = subtotal
+    filas_desc  = ""
+    hay_divisas = False
+
+    if desc_divisas:
+        monto_div    = subtotal * 0.75
+        total_final -= monto_div
+        hay_divisas  = True
+        filas_desc  += (
+            f'<tr>'
+            f'<td style="padding:1px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;white-space:nowrap;">Descuento 75% &mdash; Pago en divisas</td>'
+            f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_div:,.2f}</td>'
+            f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
+            f'<span style="color:#888;font-weight:700;">Total desc. 75%:</span> USD {total_final:,.2f}</td>'
+            f'</tr>'
+        )
+
+    if desc_pronto:
+        monto_pp     = total_final * 0.10
+        total_final -= monto_pp
+        etiqueta_pp  = "Total desc. 75%+10%" if hay_divisas else "Total desc. 10%"
+        filas_desc  += (
+            f'<tr>'
+            f'<td style="padding:1px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;white-space:nowrap;">Descuento 10% &mdash; Pronto pago 10 d&iacute;as</td>'
+            f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_pp:,.2f}</td>'
+            f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
+            f'<span style="color:#888;font-weight:700;">{etiqueta_pp}:</span> USD {total_final:,.2f}</td>'
+            f'</tr>'
+        )
+
+    # Marcador oculto con flags + subtotal — permite detectar cambios automáticamente
+    marcador = f'<!-- CLDESC:d={1 if desc_divisas else 0},p={1 if desc_pronto else 0},s={subtotal:.2f} -->'
+
+    if not filas_desc:
+        return marcador + (f'<p style="font-size:13px;">{notas}</p>' if notas else "")
+
+    # Pie de tabla con vendedor y fecha
+    fecha_str = fecha or _dt.today().strftime("%-d/%-m/%Y")
+    pie = f'{vendedor} &middot; COLOR LED &middot; {fecha_str}' if vendedor else f'COLOR LED &middot; {fecha_str}'
+
+    tabla_html = (
+        f'<table style="width:100%;border-collapse:collapse;font-size:14px;font-family:Arial;line-height:1.3;">'
+        f'<tr style="background:#1a1a2e;color:#ffffff;">'
+        f'<td colspan="3" style="padding:3px 10px;font-weight:bold;font-size:14px;letter-spacing:0.05em;">'
+        f'Descuentos especiales aplicables</td></tr>'
+        f'<tr>'
+        f'<td colspan="2" style="padding:1px 10px;border-bottom:1px solid #eee;color:#555;font-weight:700;">Subtotal a precio lista (USD BASE)</td>'
+        f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#555;">USD {subtotal:,.2f}</td>'
+        f'</tr>'
+        f'{filas_desc}'
+        f'<tr><td colspan="3" style="padding:2px 10px;font-size:11px;color:#999;">'
+        f'Vendedor: <strong>{pie}</strong></td></tr>'
+        f'</table>'
+    )
+    if notas:
+        tabla_html += f'<p style="margin-top:10px;font-size:13px;">{notas}</p>'
+
+    return marcador + tabla_html
+
 
 # ── Rutas ──────────────────────────────────────────────────────────
 @app.route("/")
@@ -192,54 +264,8 @@ def enviar_pedido():
                 "price_unit":      linea["precio"],
             }))
 
-        # 4. Calcular descuentos e incluirlos como tabla HTML compacta en la nota
-        total_final = subtotal
-        filas_desc  = ""
-        hay_divisas = False
-
-        if desc_divisas:
-            monto_div    = subtotal * 0.75
-            total_final -= monto_div
-            hay_divisas  = True
-            filas_desc  += (
-                f'<tr>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;white-space:nowrap;">Descuento 75% &mdash; Pago en divisas</td>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_div:,.2f}</td>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
-                f'<span style="color:#888;font-weight:700;">Total desc. 75%:</span> USD {total_final:,.2f}</td>'
-                f'</tr>'
-            )
-
-        if desc_pronto:
-            monto_pp     = total_final * 0.10
-            total_final -= monto_pp
-            etiqueta_pp  = "Total desc. 75%+10%" if hay_divisas else "Total desc. 10%"
-            filas_desc  += (
-                f'<tr>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;color:#2e7d32;font-weight:500;white-space:nowrap;">Descuento 10% &mdash; Pronto pago 10 d&iacute;as</td>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#c62828;font-weight:700;">&minus; USD {monto_pp:,.2f}</td>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#1b5e20;font-weight:700;">'
-                f'<span style="color:#888;font-weight:700;">{etiqueta_pp}:</span> USD {total_final:,.2f}</td>'
-                f'</tr>'
-            )
-
-        nota_completa = notas
-        if filas_desc:
-            tabla_html = (
-                f'<table style="width:100%;border-collapse:collapse;font-size:14px;font-family:Arial;line-height:1.3;">'
-                f'<tr style="background:#1a1a2e;color:#ffffff;">'
-                f'<td colspan="3" style="padding:3px 10px;font-weight:bold;font-size:14px;letter-spacing:0.05em;">'
-                f'Descuentos especiales aplicables</td></tr>'
-                f'<tr>'
-                f'<td colspan="2" style="padding:1px 10px;border-bottom:1px solid #eee;color:#555;font-weight:700;">Subtotal a precio lista (USD BASE)</td>'
-                f'<td style="padding:1px 10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap;color:#555;">USD {subtotal:,.2f}</td>'
-                f'</tr>'
-                f'{filas_desc}'
-                f'</table>'
-            )
-            if notas:
-                tabla_html += f'<p style="margin-top:10px;font-size:13px;">{notas}</p>'
-            nota_completa = tabla_html
+        # 4. Calcular descuentos e incluirlos como tabla HTML en la nota
+        nota_completa = _generar_nota(subtotal, desc_divisas, desc_pronto, notas, vendedor)
 
         # 6. Crear pedido
         order_vals = {
@@ -421,6 +447,155 @@ def catalogo():
         return jsonify(resultado)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/recalcular/<int:order_id>", methods=["POST"])
+def recalcular_nota(order_id):
+    """
+    Recalcula la tabla de descuentos usando el subtotal REAL del pedido en Odoo.
+    Llamar después de que alguien modifique productos en Odoo (antes de confirmar).
+    """
+    try:
+        uid, models = get_odoo()
+
+        # 1. Leer pedido actual de Odoo
+        data = call(models, uid, "sale.order", "read",
+            [[order_id]],
+            {"fields": ["name", "amount_untaxed", "note", "client_order_ref", "date_order"]}
+        )
+        if not data:
+            return jsonify({"error": "Pedido no encontrado"}), 404
+        order = data[0]
+
+        subtotal   = float(order.get("amount_untaxed") or 0)
+        note_vieja = order.get("note") or ""
+        vendedor   = order.get("client_order_ref") or ""
+
+        # Fecha original del pedido (mantener la fecha de creación, no hoy)
+        date_raw = order.get("date_order") or ""
+        fecha = ""
+        if date_raw and date_raw is not False:
+            try:
+                d = str(date_raw)[:10].split("-")   # "2026-09-11" → ["2026","09","11"]
+                fecha = f"{int(d[2])}/{int(d[1])}/{d[0]}"  # "11/9/2026"
+            except Exception:
+                fecha = ""
+
+        # 2. Extraer flags del marcador oculto <!-- CLDESC:d=X,p=X[,s=SUBTOTAL] -->
+        match = re.search(r'<!-- CLDESC:d=(\d),p=(\d)(?:,s=([\d.]+))? -->', note_vieja)
+        if match:
+            desc_divisas = match.group(1) == "1"
+            desc_pronto  = match.group(2) == "1"
+        else:
+            # Fallback para pedidos antiguos sin marcador: detectar por contenido
+            desc_divisas = "Pago en divisas" in note_vieja or "75%" in note_vieja
+            desc_pronto  = "Pronto pago" in note_vieja or "10%" in note_vieja
+
+        # 3. Extraer notas de texto libre (fuera de la tabla HTML)
+        notas_extra = ""
+        p_match = re.search(r'<p[^>]*>(.*?)</p>', note_vieja, re.DOTALL)
+        if p_match:
+            notas_extra = p_match.group(1).strip()
+
+        # 4. Generar nota nueva con subtotal correcto
+        nueva_nota = _generar_nota(subtotal, desc_divisas, desc_pronto, notas_extra, vendedor, fecha)
+
+        # 5. Actualizar en Odoo
+        call(models, uid, "sale.order", "write", [[order_id], {"note": nueva_nota}])
+
+        return jsonify({
+            "ok":             True,
+            "referencia":     order["name"],
+            "subtotal_nuevo": subtotal,
+            "desc_divisas":   desc_divisas,
+            "desc_pronto":    desc_pronto,
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Recalculación automática en background ─────────────────────────
+import logging as _log
+
+def _recalcular_pedidos_pendientes():
+    """
+    Busca pedidos con marcador CLDESC cuyo subtotal real en Odoo difiere
+    del subtotal guardado en el marcador, y actualiza la nota automáticamente.
+    Se ejecuta cada 2 minutos desde un hilo daemon.
+    """
+    try:
+        uid, models = get_odoo()
+
+        # Solo pedidos activos (no cancelados/completados) que tengan marcador CLDESC
+        pedidos = call(models, uid, "sale.order", "search_read",
+            [[["state", "not in", ["done", "cancel"]], ["note", "like", "CLDESC"]]],
+            {"fields": ["id", "name", "amount_untaxed", "note",
+                        "client_order_ref", "date_order"],
+             "limit": 50, "order": "write_date desc"}
+        )
+
+        actualizados = 0
+        for order in pedidos:
+            subtotal   = float(order.get("amount_untaxed") or 0)
+            note_vieja = order.get("note") or ""
+
+            # Extraer flags y subtotal guardado del marcador
+            m = re.search(r'<!-- CLDESC:d=(\d),p=(\d)(?:,s=([\d.]+))? -->', note_vieja)
+            if not m:
+                continue
+
+            # Comparar subtotal actual vs guardado — solo actualizar si cambió
+            s_guardado = float(m.group(3)) if m.group(3) else None
+            if s_guardado is not None and abs(subtotal - s_guardado) < 0.01:
+                continue   # Sin cambios, no tocar
+
+            desc_divisas = m.group(1) == "1"
+            desc_pronto  = m.group(2) == "1"
+            vendedor     = order.get("client_order_ref") or ""
+
+            # Preservar fecha original del pedido
+            date_raw = order.get("date_order") or ""
+            fecha = ""
+            if date_raw:
+                try:
+                    d = str(date_raw)[:10].split("-")
+                    fecha = f"{int(d[2])}/{int(d[1])}/{d[0]}"
+                except Exception:
+                    pass
+
+            # Extraer notas de texto libre
+            notas_extra = ""
+            p_m = re.search(r'<p[^>]*>(.*?)</p>', note_vieja, re.DOTALL)
+            if p_m:
+                notas_extra = p_m.group(1).strip()
+
+            nueva_nota = _generar_nota(subtotal, desc_divisas, desc_pronto,
+                                        notas_extra, vendedor, fecha)
+            call(models, uid, "sale.order", "write",
+                 [[order["id"]], {"note": nueva_nota}])
+            actualizados += 1
+            _log.getLogger(__name__).info(
+                f"[CLDESC-AUTO] {order['name']}: subtotal {s_guardado} → {subtotal}"
+            )
+
+        return actualizados
+
+    except Exception as e:
+        _log.getLogger(__name__).error(f"[CLDESC-AUTO] Error: {e}")
+        return 0
+
+
+def _hilo_recalcular():
+    """Hilo daemon: recalcula notas de descuento automáticamente cada 2 minutos."""
+    time.sleep(20)   # Breve pausa al arranque para que la app esté lista
+    while True:
+        _recalcular_pedidos_pendientes()
+        time.sleep(120)   # Repetir cada 2 minutos
+
+
+# Iniciar hilo en background al cargar el módulo (funciona con gunicorm)
+threading.Thread(target=_hilo_recalcular, daemon=True, name="cldesc-auto").start()
 
 
 if __name__ == "__main__":
